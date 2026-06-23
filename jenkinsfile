@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+
+    stages {
+
+        // ---------------- Clone Repo ----------------
+        stage('Clone Repo') {
+            steps {
+                git branch: 'main', url: 'https://github.com/rajasekaran191/trend-app.git'
+            }
+        }
+
+        // ---------------- Build Docker Image ----------------
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t rajasekaran191/trend-app:latest .'
+            }
+        }
+
+        // ---------------- Push to DockerHub ----------------
+        stage('Push to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push rajasekaran191/trend-app:latest
+                    '''
+                }
+            }
+        }
+
+        // ---------------- Deploy to Kubernetes ----------------
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-eks-creds',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    sh '''
+                        echo "Updating kubeconfig and deploying app..."
+                        aws eks update-kubeconfig --region ap-south-1 --name trend-eks-cluster
+                       
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                         
+                        
+                        kubectl rollout restart deployment/trend-app
+                        kubectl rollout status deployment/trend-app
+                    '''
+                }
+            }
+        }
+
+    } // end of stages
+    post {
+        always {
+            echo 'Cleaning up Docker login...'
+            sh 'docker logout'
+        }
+        success {
+            echo 'Pipeline completed successfully! Your new changes are live.'
+        }
+        failure {
+            echo 'Pipeline failed. Check the logs above for errors.'
+        }
+    }
+} // end of pipeline
