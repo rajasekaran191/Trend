@@ -27,7 +27,7 @@ pipeline {
                 )]) {
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push rajasekaran191/trend-app:latest
+                        docker push rajasekaran/trend-app:latest
                     '''
                 }
             }
@@ -36,12 +36,11 @@ pipeline {
         // ---------------- Deploy to Kubernetes ----------------
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding', 
-                    credentialsId: 'aws-eks-creds', 
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-eks-creds',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
                     sh '''
                         echo "Updating kubeconfig and deploying app..."
                         aws eks update-kubeconfig --region ap-south-1 --name trend-eks-cluster
@@ -49,6 +48,7 @@ pipeline {
                         kubectl apply -f k8s/deployment.yaml
                         kubectl apply -f k8s/service.yaml
                          
+                        
                         kubectl rollout restart deployment/trend-app
                         kubectl rollout status deployment/trend-app
                     '''
@@ -70,4 +70,3 @@ pipeline {
         }
     }
 } // end of pipeline
-Use code with caution.What Changed?Removed user
