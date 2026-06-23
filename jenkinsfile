@@ -27,7 +27,7 @@ pipeline {
                 )]) {
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push rajasekaran/trend-app:latest
+                        docker push rajasekaran191/trend-app:latest
                     '''
                 }
             }
