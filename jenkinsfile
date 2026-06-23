@@ -6,7 +6,7 @@ pipeline {
         // ---------------- Clone Repo ----------------
         stage('Clone Repo') {
             steps {
-                git branch: 'main', url: 'https://github.com/rajasekaran191/trend-app.git'
+                git branch: 'main', url: 'https://github.com/rajasekaran191/Trend.git'
             }
         }
 
