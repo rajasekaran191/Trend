@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: trend-app-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: trend-app
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+  - port: http
+    path: /health
+    interval: 15s
